@@ -5,22 +5,30 @@ CFLAGS = -Wall -std=c++17 \
 -I../include \
 -MMD -MP
 
+DIST_DIR = dist
+DEP_DIR = depends
+
 SRCS = $(wildcard *.cpp)
-OBJS = $(SRCS:.cpp=.o)
-DEPS = $(OBJS:.o=.d)
 
-all: src.o
+OBJS = $(patsubst %.cpp,$(DIST_DIR)/%.o,$(SRCS))
+DEPS = $(patsubst %.cpp,$(DEP_DIR)/%.d,$(SRCS))
 
-%.o: %.cpp
-	$(CC) $(CFLAGS) -c $< -o $@
+all: dirs src.o
 
-glad.o: glad.c
-	$(CC) $(CFLAGS) -c glad.c -o glad.o
+dirs:
+	mkdir -p $(DIST_DIR)
+	mkdir -p $(DEP_DIR)
 
-src.o: $(OBJS) glad.o
-	ld -r -o src.o $(OBJS) glad.o
+$(DIST_DIR)/%.o: %.cpp
+	$(CC) $(CFLAGS) -MF $(DEP_DIR)/$*.d -c $< -o $@
 
--include $(DEPS)
+$(DIST_DIR)/glad.o: glad.c
+	$(CC) $(CFLAGS) -MF $(DEP_DIR)/glad.d -c glad.c -o $@
+
+src.o: $(OBJS) $(DIST_DIR)/glad.o
+	ld -r -o src.o $(OBJS) $(DIST_DIR)/glad.o
+
+-include $(DEPS) $(DEP_DIR)/glad.d
 
 clean:
-	rm -f *.o *.d src.o
+	rm -rf $(DIST_DIR) $(DEP_DIR) src.o
