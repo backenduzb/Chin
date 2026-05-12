@@ -18,7 +18,7 @@ Window::Window(int width, int height, const std::string& title) {
         return;
     }
 
-    glfwSetWindowPos(window, 10, 10);
+    glfwSetWindowPos(window, 0, 0);
     glfwMakeContextCurrent(window);
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {

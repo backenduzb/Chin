@@ -3,16 +3,17 @@
 #include <thread>
 #include <iostream>
 
+
 Application::Application() 
     : window(800, 600, "GLB Viewer Animated"),
       shader("/home/vic/Projects/UPGSkills/CppApp/shaders/base.vert", 
              "/home/vic/Projects/UPGSkills/CppApp/shaders/base.frag") 
 {
     if (model.load("/home/vic/Projects/UPGSkills/CppApp/assets/bonel.glb")) {
-        if (!model.animations.empty()) {
-            std::cout << "Starting animation: " << model.animations[0].name << std::endl;
-            animPlayer.setAnimation(0);
-        }
+    if (!model.animations.empty()) {
+        std::cout << "Starting animation: " << model.animations[0].name << std::endl;
+        animPlayer.setAnimation(0);
+    }
     }
 }
 
