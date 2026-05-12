@@ -4,6 +4,7 @@
 #include "Shader.h"
 #include "Camera.h"
 #include "GLBLoader.h"
+#include "Animation.h"
 
 class Application {
 public:
@@ -18,6 +19,7 @@ private:
     Shader shader;
     Camera camera;
     GLBLoader model;
+    AnimationPlayer animPlayer;
 
     void processInput();
 };
