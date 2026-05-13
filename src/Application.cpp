@@ -3,17 +3,16 @@
 #include <thread>
 #include <iostream>
 
-
 Application::Application() 
-    : window(800, 600, "GLB Viewer Animated"),
+    : window(800, 600, "glboverlay_app"),
       shader("/home/vic/Projects/UPGSkills/CppApp/shaders/base.vert", 
              "/home/vic/Projects/UPGSkills/CppApp/shaders/base.frag") 
 {
     if (model.load("/home/vic/Projects/UPGSkills/CppApp/assets/bonel.glb")) {
-    if (!model.animations.empty()) {
-        std::cout << "Starting animation: " << model.animations[0].name << std::endl;
-        animPlayer.setAnimation(0);
-    }
+        if (!model.animations.empty()) {
+            animPlayer.setAnimation(0);
+        }
+        animPlayer.update(0.0f, model);
     }
 }
 
@@ -33,7 +32,9 @@ void Application::run() {
         window.pollEvents();
         processInput();
 
-        animPlayer.update(deltaTime.count(), model);
+        if (deltaTime.count() > 0.001f) {
+            animPlayer.update(deltaTime.count(), model);
+        }
         
         std::vector<glm::mat4> joints;
         if (!model.skins.empty()) {
@@ -50,7 +51,10 @@ void Application::run() {
 
         if (frameDuration.count() < targetFrameTime) {
             double sleepTime = targetFrameTime - frameDuration.count();
-            std::this_thread::sleep_for(std::chrono::duration<double>(sleepTime));
+            if (sleepTime > 0.002) {
+                std::this_thread::sleep_for(std::chrono::duration<double>(sleepTime - 0.001));
+            }
+            while (std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - frameStartTime).count() < targetFrameTime);
         }
     }
 }

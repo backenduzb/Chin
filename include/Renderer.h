@@ -15,4 +15,8 @@ public:
 private:
     std::map<std::string, GLint> uniformCache;
     GLint getUniformLocation(GLuint shaderId, const std::string& name);
+    
+    // Cache for some state to avoid redundant OpenGL calls
+    GLuint lastVAO = 0;
+    GLuint lastTexture = 0;
 };

@@ -3,6 +3,8 @@
 #include <GLFW/glfw3.h>
 
 void Renderer::clear() {
+    // Fonni to'liq shaffof qilish (Alpha = 0.0)
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
@@ -37,10 +39,32 @@ void Renderer::render(Shader& shader, Camera& camera, GLBLoader& model, GLFWwind
 
     if (!jointMatrices.empty()) {
         glUniform1i(skinnedLoc, 1);
-        glUniformMatrix4fv(jointsLoc, jointMatrices.size(), GL_FALSE, glm::value_ptr(jointMatrices[0]));
+        glUniformMatrix4fv(jointsLoc, (GLsizei)jointMatrices.size(), GL_FALSE, glm::value_ptr(jointMatrices[0]));
     } else {
         glUniform1i(skinnedLoc, 0);
     }
 
-    model.draw(shader.id);
+    GLint diffuseLoc = getUniformLocation(shader.id, "diffuseTexture");
+    GLint hasTexLoc = getUniformLocation(shader.id, "hasTexture");
+    
+    for (auto& p : model.primitives) {
+        if (p.materialIndex >= 0 && (size_t)p.materialIndex < model.textures.size()) {
+            GLuint tex = model.textures[p.materialIndex];
+            if (tex != lastTexture) {
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, tex);
+                lastTexture = tex;
+                glUniform1i(diffuseLoc, 0);
+            }
+            glUniform1i(hasTexLoc, 1);
+        } else {
+            glUniform1i(hasTexLoc, 0);
+        }
+
+        if (p.vao != lastVAO) {
+            glBindVertexArray(p.vao);
+            lastVAO = p.vao;
+        }
+        glDrawElements(GL_TRIANGLES, p.indexCount, p.indexType, 0);
+    }
 }
