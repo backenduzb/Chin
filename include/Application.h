@@ -20,6 +20,5 @@ private:
     Camera camera;
     GLBLoader model;
     AnimationPlayer animPlayer;
-
     void processInput();
 };

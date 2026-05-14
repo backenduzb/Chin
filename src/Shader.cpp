@@ -1,6 +1,7 @@
 #include "../include/Shader.h"
 #include "../include/Reader.h"
-
+#include <GLFW/glfw3.h>
+#include <glm/gtc/type_ptr.hpp>
 #include <iostream>
 
 GLuint compile(GLenum type, const char* src) {
@@ -47,4 +48,13 @@ Shader::Shader(
 
 void Shader::use() {
     glUseProgram(id);
+}
+
+void Shader::setMat4(const std::string& name, const glm::mat4& mat) {
+    glUniformMatrix4fv(
+        glGetUniformLocation(id, name.c_str()),
+        1,
+        GL_FALSE,
+        glm::value_ptr(mat)
+    );
 }

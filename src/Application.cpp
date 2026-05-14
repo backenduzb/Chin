@@ -1,16 +1,15 @@
 #include "../include/Application.h"
 #include <chrono>
 #include <thread>
-#include <iostream>
 
 Application::Application() 
-    : window(800, 600, "glboverlay_app"),
+    : window(300, 300, "chin"),
       shader("/home/vic/Projects/UPGSkills/CppApp/shaders/base.vert", 
              "/home/vic/Projects/UPGSkills/CppApp/shaders/base.frag") 
 {
-    if (model.load("/home/vic/Projects/UPGSkills/CppApp/assets/bonel.glb")) {
+	if (model.load("/home/vic/Projects/UPGSkills/CppApp/assets/bonel.glb")) {
         if (!model.animations.empty()) {
-            animPlayer.setAnimation(0);
+            animPlayer.setAnimation(2);
         }
         animPlayer.update(0.0f, model);
     }
@@ -40,9 +39,15 @@ void Application::run() {
         if (!model.skins.empty()) {
             joints = animPlayer.getJointMatrices(model, 0);
         }
-
         renderer.clear();
-        renderer.render(shader, camera, model, window.getNativeWindow(), joints);
+        
+        glm::mat4 modelMat(1.0f);
+        
+        modelMat = glm::translate(modelMat, glm::vec3(3.0f, -1.5f, 0.0f));
+        
+        modelMat = glm::rotate(modelMat, glm::radians(1.0f), glm::vec3(3.0f, 2.0f, 3.0f));
+        
+        renderer.render(shader, camera, model, window.getNativeWindow(), joints, modelMat);
 
         window.swapBuffers();
 

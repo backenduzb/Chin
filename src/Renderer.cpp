@@ -3,7 +3,6 @@
 #include <GLFW/glfw3.h>
 
 void Renderer::clear() {
-    // Fonni to'liq shaffof qilish (Alpha = 0.0)
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
@@ -16,7 +15,7 @@ GLint Renderer::getUniformLocation(GLuint shaderId, const std::string& name) {
     return location;
 }
 
-void Renderer::render(Shader& shader, Camera& camera, GLBLoader& model, GLFWwindow* window, const std::vector<glm::mat4>& jointMatrices) {
+void Renderer::render(Shader& shader, Camera& camera, GLBLoader& model, GLFWwindow* window, const std::vector<glm::mat4>& jointMatrices, const glm::mat4& modelMat) {
     shader.use();
 
     int width, height;
@@ -29,7 +28,6 @@ void Renderer::render(Shader& shader, Camera& camera, GLBLoader& model, GLFWwind
     GLint skinnedLoc = getUniformLocation(shader.id, "isSkinned");
     GLint jointsLoc = getUniformLocation(shader.id, "jointMatrices");
 
-    glm::mat4 modelMat = glm::mat4(1.0f);
     glm::mat4 viewMat = camera.getView();
     glm::mat4 projMat = glm::perspective(glm::radians(45.0f), (float)width / (float)height, 0.1f, 1000.0f);
 
