@@ -1,25 +1,14 @@
-.PHONY: all src utils build run clean
-
-CC = g++
-
-LIBS = -lglfw -ldl -lGL
+.PHONY: all build run clean
 
 all: build
 
-src:
-	$(MAKE) -C src
-
-utils:
-	$(MAKE) -C utils
-
-	
-build: src utils
-	$(CC) src/src.o utils/utils.o -o app $(LIBS)
+build:
+	mkdir -p build
+	cd build && cmake .. && cmake --build .
+	cp build/app .
 
 run: build
 	./app
 
 clean:
-	rm -rf app
-	$(MAKE) -C src clean
-	$(MAKE) -C utils clean
+	rm -rf build app
