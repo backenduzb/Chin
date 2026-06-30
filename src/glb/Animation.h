@@ -8,6 +8,7 @@ public:
     AnimationPlayer();
     
     void setAnimation(int index);
+    void setAnimation(const std::string& name, const GLBLoader& model);
     void update(float deltaTime, GLBLoader& model);
     
     std::vector<glm::mat4> getJointMatrices(const GLBLoader& model, int skinIndex);

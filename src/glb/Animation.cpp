@@ -3,12 +3,34 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <iostream>
 #include <cmath>
+#include <algorithm>
+#include <cctype>
 
 AnimationPlayer::AnimationPlayer() {}
 
 void AnimationPlayer::setAnimation(int index) {
     currentAnimationIndex = index;
     currentTime = 0.0f;
+}
+
+void AnimationPlayer::setAnimation(const std::string& name, const GLBLoader& model) {
+    auto toLower = [](const std::string& s) {
+        std::string lower = s;
+        std::transform(lower.begin(), lower.end(), lower.begin(), [](unsigned char c) {
+            return std::tolower(c);
+        });
+        return lower;
+    };
+    
+    std::string lowerTarget = toLower(name);
+    for (size_t i = 0; i < model.animations.size(); i++) {
+        if (toLower(model.animations[i].name) == lowerTarget) {
+            currentAnimationIndex = (int)i;
+            currentTime = 0.0f;
+            return;
+        }
+    }
+    std::cerr << "[Warning] Animation with name '" << name << "' not found!" << std::endl;
 }
 
 void AnimationPlayer::update(float deltaTime, GLBLoader& model) {

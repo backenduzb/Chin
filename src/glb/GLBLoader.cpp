@@ -99,6 +99,7 @@ bool GLBLoader::load(const char* path) {
             anim.channels.push_back(chan);
         }
         animations.push_back(anim);
+        std::cout << "Animation loaded: " << anim.name << " (duration: " << anim.duration << "s)" << std::endl;
     }
 
     for (auto& mesh : model.meshes) {

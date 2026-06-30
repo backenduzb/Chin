@@ -12,7 +12,7 @@ Application::Application()
     std::string modelPath = Utils::getResourcePath("assets/chiin.glb");
     if (model.load(modelPath.c_str())) {
         if (!model.animations.empty()) {
-            animPlayer.setAnimation(0);
+            animPlayer.setAnimation("idle", model);
         }
         animPlayer.update(0.0f, model);
     } else {
