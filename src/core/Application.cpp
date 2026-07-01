@@ -26,7 +26,7 @@ Application::~Application() {
 }
 
 void Application::run() {
-    const double targetFPS = 90.0;
+    const double targetFPS = 60.0;
     const double targetFrameTime = 1.0 / targetFPS;
     auto lastTime = std::chrono::high_resolution_clock::now();
 
@@ -50,7 +50,7 @@ void Application::run() {
         renderer.clear();
 
         glm::mat4 modelMat(1.0f);
-        modelMat = glm::translate(modelMat, glm::vec3(3.0f, -1.0f, 2.0f));
+        modelMat = glm::translate(modelMat, glm::vec3(3.0f, -1.0f, 0.0f));
         modelMat = glm::rotate(modelMat, glm::radians(1.0f), glm::vec3(3.0f, 2.0f, 3.0f));
 
         renderer.render(shader, camera, model, window.getNativeWindow(), joints, modelMat);

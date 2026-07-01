@@ -14,7 +14,7 @@ Window::Window(int width, int height, const std::string& title) {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    glfwWindowHint(GLFW_SAMPLES, 4);
+    glfwWindowHint(GLFW_SAMPLES, 8); // <- blyat resoultioni shu yerda faqat shuni qidirasan #$%^&*()
 
     glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
     glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, GLFW_TRUE);
