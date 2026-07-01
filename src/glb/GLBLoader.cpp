@@ -6,13 +6,6 @@
 #include <iostream>
 #include <glm/gtc/type_ptr.hpp>
 
-struct Vertex {
-    float position[3];
-    float normal[3];
-    float texCoord[2];
-    float joints[4];
-    float weights[4];
-};
 
 GLint GLBLoader::getUniformLocation(GLuint shaderId, const std::string& name) {
     std::string key = std::to_string(shaderId) + name;
@@ -60,7 +53,9 @@ bool GLBLoader::load(const char* path) {
             if (n.rotation.size() == 4) node.rotation = glm::make_quat(n.rotation.data());
             if (n.scale.size() == 3) node.scale = glm::make_vec3(n.scale.data());
         }
-        node.children = n.children; nodes.push_back(node);
+        node.children = n.children; 
+        if (!n.weights.empty()) { for (double w : n.weights) node.weights.push_back((float)w); }
+        nodes.push_back(node);
     }
     for (auto& node : nodes) { for (int child : node.children) nodes[child].parent = node.index; }
     for (size_t i = 0; i < nodes.size(); i++) { if (nodes[i].parent == -1) rootNodes.push_back((int)i); }
@@ -90,12 +85,16 @@ bool GLBLoader::load(const char* path) {
             for (size_t i = 0; i < outAcc.count; i++) {
                 if (outAcc.type == TINYGLTF_TYPE_VEC3) samp.outputs.push_back(glm::vec4(glm::make_vec3(&outData[i * 3]), 0.0f));
                 else if (outAcc.type == TINYGLTF_TYPE_VEC4) samp.outputs.push_back(glm::make_vec4(&outData[i * 4]));
+                else if (outAcc.type == TINYGLTF_TYPE_SCALAR) samp.outputWeights.push_back(outData[i]);
             }
             anim.samplers.push_back(samp);
         }
         for (auto& c : a.channels) {
+            if (c.target_path != "translation" && c.target_path != "rotation" && c.target_path != "scale" && c.target_path != "weights") {
+                continue;
+            }
             AnimationChannel chan; chan.samplerIndex = c.sampler; chan.nodeIndex = c.target_node;
-            chan.path = (c.target_path == "translation") ? AnimationChannel::TRANSLATION : (c.target_path == "rotation") ? AnimationChannel::ROTATION : AnimationChannel::SCALE;
+            chan.path = (c.target_path == "translation") ? AnimationChannel::TRANSLATION : (c.target_path == "rotation") ? AnimationChannel::ROTATION : (c.target_path == "scale") ? AnimationChannel::SCALE : AnimationChannel::WEIGHTS;
             anim.channels.push_back(chan);
         }
         animations.push_back(anim);
@@ -103,6 +102,8 @@ bool GLBLoader::load(const char* path) {
     }
 
     for (auto& mesh : model.meshes) {
+        MeshDef md; md.firstPrimitive = (int)primitives.size(); md.primitiveCount = (int)mesh.primitives.size();
+        meshes.push_back(md);
         for (auto& primitive : mesh.primitives) {
             Primitive p; std::vector<Vertex> vertices;
             if (primitive.attributes.find("POSITION") == primitive.attributes.end()) continue;
@@ -188,6 +189,44 @@ bool GLBLoader::load(const char* path) {
                     p.materialIndex = model.textures[mat.pbrMetallicRoughness.baseColorTexture.index].source;
                 }
             }
+            
+            p.baseVertices = vertices;
+            for (auto& target : primitive.targets) {
+                std::vector<glm::vec3> tPos(vertices.size(), glm::vec3(0.0f));
+                std::vector<glm::vec3> tNorm(vertices.size(), glm::vec3(0.0f));
+                
+                auto extractSparse = [&](const tinygltf::Accessor& acc, std::vector<glm::vec3>& out) {
+                    if (acc.bufferView >= 0) {
+                        const auto& view = model.bufferViews[acc.bufferView];
+                        const float* data = reinterpret_cast<const float*>(&model.buffers[view.buffer].data[view.byteOffset + acc.byteOffset]);
+                        for(size_t i=0; i<acc.count; i++) out[i] = glm::make_vec3(&data[i*3]);
+                    }
+                    if (acc.sparse.isSparse) {
+                        const auto& indices = acc.sparse.indices;
+                        const auto& idxView = model.bufferViews[indices.bufferView];
+                        const unsigned char* idxData = &model.buffers[idxView.buffer].data[idxView.byteOffset + indices.byteOffset];
+                        
+                        const auto& values = acc.sparse.values;
+                        const auto& valView = model.bufferViews[values.bufferView];
+                        const float* valData = reinterpret_cast<const float*>(&model.buffers[valView.buffer].data[valView.byteOffset + values.byteOffset]);
+                        
+                        for (size_t i = 0; i < acc.sparse.count; i++) {
+                            int index = 0;
+                            if (indices.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE) index = idxData[i];
+                            else if (indices.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT) index = reinterpret_cast<const uint16_t*>(idxData)[i];
+                            else if (indices.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT) index = reinterpret_cast<const uint32_t*>(idxData)[i];
+                            out[index] = glm::make_vec3(&valData[i*3]);
+                        }
+                    }
+                };
+
+                if (target.count("POSITION")) extractSparse(model.accessors[target.at("POSITION")], tPos);
+                if (target.count("NORMAL")) extractSparse(model.accessors[target.at("NORMAL")], tNorm);
+                
+                p.morphTargetsPos.push_back(tPos);
+                p.morphTargetsNorm.push_back(tNorm);
+            }
+            
             primitives.push_back(p);
         }
     }
@@ -203,5 +242,35 @@ void GLBLoader::draw(GLuint shaderId) {
             glUniform1i(diffuseLoc, 0); glUniform1i(hasTexLoc, 1);
         } else glUniform1i(hasTexLoc, 0);
         glBindVertexArray(p.vao); glDrawElements(GL_TRIANGLES, p.indexCount, p.indexType, 0);
+    }
+}
+
+void GLBLoader::updateMorphTargets() {
+    for (auto& node : nodes) {
+        if (node.meshIndex >= 0 && !node.weights.empty()) {
+            MeshDef& md = meshes[node.meshIndex];
+            for (int i = 0; i < md.primitiveCount; i++) {
+                Primitive& p = primitives[md.firstPrimitive + i];
+                if (p.morphTargetsPos.empty()) continue;
+                std::vector<Vertex> blended = p.baseVertices;
+                for (size_t v = 0; v < blended.size(); v++) {
+                    for (size_t t = 0; t < node.weights.size() && t < p.morphTargetsPos.size(); t++) {
+                        float w = node.weights[t];
+                        if (w != 0.0f) {
+                            blended[v].position[0] += w * p.morphTargetsPos[t][v].x;
+                            blended[v].position[1] += w * p.morphTargetsPos[t][v].y;
+                            blended[v].position[2] += w * p.morphTargetsPos[t][v].z;
+                            if (t < p.morphTargetsNorm.size() && !p.morphTargetsNorm[t].empty()) {
+                                blended[v].normal[0] += w * p.morphTargetsNorm[t][v].x;
+                                blended[v].normal[1] += w * p.morphTargetsNorm[t][v].y;
+                                blended[v].normal[2] += w * p.morphTargetsNorm[t][v].z;
+                            }
+                        }
+                    }
+                }
+                glBindBuffer(GL_ARRAY_BUFFER, p.vbo);
+                glBufferSubData(GL_ARRAY_BUFFER, 0, blended.size() * sizeof(Vertex), blended.data());
+            }
+        }
     }
 }

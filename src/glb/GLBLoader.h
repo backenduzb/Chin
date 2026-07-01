@@ -21,6 +21,7 @@ struct Node {
 
     int meshIndex = -1;
     int skinIndex = -1;
+    std::vector<float> weights;
 
     glm::mat4 getLocalTransform() {
         if (useMatrix) return matrix;
@@ -41,10 +42,11 @@ struct AnimationSampler {
     InterpolationType interpolation;
     std::vector<float> inputs;
     std::vector<glm::vec4> outputs;
+    std::vector<float> outputWeights;
 };
 
 struct AnimationChannel {
-    enum PathType { TRANSLATION, ROTATION, SCALE };
+    enum PathType { TRANSLATION, ROTATION, SCALE, WEIGHTS };
     PathType path;
     int nodeIndex;
     int samplerIndex;
@@ -57,6 +59,14 @@ struct Animation {
     float duration = 0.0f;
 };
 
+struct Vertex {
+    float position[3];
+    float normal[3];
+    float texCoord[2];
+    float joints[4];
+    float weights[4];
+};
+
 struct Primitive {
     GLuint vao;
     GLuint vbo;
@@ -64,11 +74,21 @@ struct Primitive {
     int indexCount;
     GLenum indexType;
     int materialIndex;
+
+    std::vector<Vertex> baseVertices;
+    std::vector<std::vector<glm::vec3>> morphTargetsPos;
+    std::vector<std::vector<glm::vec3>> morphTargetsNorm;
+};
+
+struct MeshDef {
+    int firstPrimitive;
+    int primitiveCount;
 };
 
 class GLBLoader {
 public:
     std::vector<Primitive> primitives;
+    std::vector<MeshDef> meshes;
     std::vector<GLuint> textures;
     std::vector<Node> nodes;
     std::vector<Skin> skins;
@@ -77,6 +97,7 @@ public:
 
     bool load(const char* path);
     void draw(GLuint shaderId);
+    void updateMorphTargets();
 
 private:
     std::map<std::string, GLint> uniformCache;

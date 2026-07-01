@@ -1,20 +1,22 @@
 #include "Application.h"
 #include "../utils/FileSystem.h"
 #include <chrono>
+#include <string>
 #include <thread>
 #include <iostream>
 
-Application::Application() 
+Application::Application()
     : window(300, 300, "chin"),
-      shader(Utils::getResourcePath("shaders/base.vert"), 
-             Utils::getResourcePath("shaders/base.frag")) 
+      shader(Utils::getResourcePath("shaders/base.vert"),
+             Utils::getResourcePath("shaders/base.frag"))
 {
-    std::string modelPath = Utils::getResourcePath("assets/chiin.glb");
+    std::string modelPath = Utils::getResourcePath("assets/Untitled.glb");
     if (model.load(modelPath.c_str())) {
         if (!model.animations.empty()) {
-            animPlayer.setAnimation("idle", model);
+            animPlayer.setAnimation("faceangry", model);
         }
         animPlayer.update(0.0f, model);
+        model.updateMorphTargets();
     } else {
         std::cerr << "[Error] Failed to load model: " << modelPath << std::endl;
     }
@@ -38,18 +40,19 @@ void Application::run() {
 
         if (deltaTime.count() > 0.001f) {
             animPlayer.update(deltaTime.count(), model);
+            model.updateMorphTargets();
         }
-        
+
         std::vector<glm::mat4> joints;
         if (!model.skins.empty()) {
             joints = animPlayer.getJointMatrices(model, 0);
         }
         renderer.clear();
-        
+
         glm::mat4 modelMat(1.0f);
-        modelMat = glm::translate(modelMat, glm::vec3(3.0f, -1.0f, 0.0f));
+        modelMat = glm::translate(modelMat, glm::vec3(3.0f, -1.0f, 2.0f));
         modelMat = glm::rotate(modelMat, glm::radians(1.0f), glm::vec3(3.0f, 2.0f, 3.0f));
-        
+
         renderer.render(shader, camera, model, window.getNativeWindow(), joints, modelMat);
 
         window.swapBuffers();
