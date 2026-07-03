@@ -5,6 +5,8 @@
 #include "../rendering/Camera.h"
 #include "../glb/GLBLoader.h"
 #include "../glb/Animation.h"
+#include "SpeechBubbleManager.h"
+#include "../rendering/UIRenderer.h"
 
 class Application {
 public:
@@ -20,5 +22,7 @@ private:
     Camera camera;
     GLBLoader model;
     AnimationPlayer animPlayer;
+    SpeechBubbleManager bubbleManager;
+    UIRenderer uiRenderer;
     void processInput();
 };

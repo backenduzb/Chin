@@ -48,6 +48,8 @@ add_executable(app
     src/glb/GLBLoader.cpp
     src/glb/Animation.cpp
     src/utils/FileSystem.cpp
+    src/core/SpeechBubbleManager.cpp
+    src/rendering/UIRenderer.cpp
 )
 
 target_compile_definitions(app PRIVATE PROJECT_ROOT_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
